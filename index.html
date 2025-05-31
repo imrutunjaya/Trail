@@ -3,11 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>padhAI Clone</title>
+<title>padhAI Clone with Curved Nav and Admin Upload</title>
 <style>
   /* Reset and base */
   * {
     box-sizing: border-box;
+    --hl: 0;
+    --sel: 0;
+    margin: 0;
+    border: none;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
   }
   body {
     margin: 0;
@@ -25,14 +34,12 @@
     text-decoration: none;
     color: inherit;
   }
-
   /* Thin line icon style */
   .icon-line {
     stroke: black;
     stroke-width: 1;
     fill: none;
   }
-
   header {
     border-bottom: 1px solid black;
     height: 56px;
@@ -44,11 +51,9 @@
     letter-spacing: 1px;
     flex-shrink: 0;
   }
-
-  /* Main content */
   main {
     padding: 16px;
-    padding-bottom: 80px; /* to avoid bottom nav overlap */
+    padding-bottom: 80px; /* avoid bottom nav overlap + expandable buttons */
     flex-grow: 1;
     overflow-y: auto;
   }
@@ -56,8 +61,6 @@
     font-weight: 600;
     margin: 0 0 12px 0;
   }
-
-  /* Study material cards - thin black border */
   .material-list {
     list-style: none;
     padding: 0;
@@ -86,7 +89,6 @@
     font-size: 0.85rem;
     color: #333;
   }
-  /* Download button */
   .download-btn {
     border: 1px solid black;
     background: white;
@@ -108,8 +110,6 @@
     background: black;
     color: white;
   }
-
-  /* Progress bar */
   .progress-bar-container {
     width: 100px;
     height: 8px;
@@ -125,13 +125,12 @@
     width: 0%;
     transition: width 0.2s ease;
   }
-
-  /* Bottom Navigation Bar */
+  /* Bottom nav with left curve */
   nav.bottom-nav {
     position: fixed;
     bottom: 0;
     left: 0;
-    right: 0;
+    right: 56px; /* leave room for expandable button */
     height: 56px;
     background: #fff;
     border-top: 1px solid black;
@@ -141,6 +140,8 @@
     user-select: none;
     font-size: 0.85rem;
     flex-shrink: 0;
+    z-index: 100;
+    clip-path: polygon(30px 0%, 100% 0%, 100% 100%, 30px 100%, 0 50%);
   }
   nav.bottom-nav button {
     background: none;
@@ -169,16 +170,118 @@
     color: black;
     font-weight: 700;
   }
-
-  /* Sections for navigation */
+  #expandable-main-btn {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    margin: 0 0 0 4px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: white;
+    border: 1px solid black;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s ease, transform 0.3s ease;
+    z-index: 110;
+  }
+  #expandable-main-btn:hover,
+  #expandable-main-btn:focus {
+    background: black;
+    outline: none;
+  }
+  #expandable-main-btn svg {
+    width: 28px;
+    height: 28px;
+    stroke: black;
+    stroke-width: 1.5;
+    fill: none;
+    transition: stroke 0.2s ease, transform 0.3s ease;
+  }
+  #expandable-main-btn:hover svg,
+  #expandable-main-btn:focus svg {
+    stroke: white;
+  }
+  #expandable-main-btn.expanded svg {
+    transform: rotate(45deg);
+  }
+  #expandable-buttons {
+    position: fixed;
+    bottom: 64px;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  #expandable-buttons.expanded {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .content-type-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid black;
+    background: white;
+    color: black;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    font-size: 1.2rem;
+    box-shadow: 0 0 0 transparent;
+    position: relative;
+  }
+  .content-type-btn:hover,
+  .content-type-btn:focus {
+    background: black;
+    color: white;
+    outline: none;
+    box-shadow: 0 0 6px black;
+  }
+  .content-type-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+  .content-type-btn .tooltip {
+    position: absolute;
+    right: 56px;
+    background: black;
+    color: #caf0f8;
+    border-radius: 0.3rem;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(8px);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    user-select: none;
+    top: 50%;
+    transform-origin: left center;
+    transform: translateX(8px) translateY(-50%);
+  }
+  .content-type-btn:hover .tooltip,
+  .content-type-btn:focus .tooltip {
+    opacity: 1;
+    transform: translateX(0) translateY(-50%);
+  }
   section.page {
     display: none;
   }
   section.page.active {
     display: block;
   }
-
-  /* Alert/toast style */
   .toast {
     position: fixed;
     bottom: 70px;
@@ -192,15 +295,13 @@
     pointer-events: none;
     transition: opacity 0.3s ease;
     font-weight: 600;
-    z-index: 100;
+    z-index: 120;
     font-size: 0.9rem;
   }
   .toast.show {
     opacity: 0.85;
     pointer-events: auto;
   }
-
-  /* Modal overlay */
   .modal-overlay {
     position: fixed;
     top: 0;
@@ -211,7 +312,7 @@
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 200;
+    z-index: 125;
   }
   .modal-overlay.show {
     display: flex;
@@ -253,6 +354,98 @@
     background: black;
     color: white;
   }
+  /* Profile area styles */
+  #profile .profile-info, #admin .admin-login, #admin .admin-panel {
+    max-width: 400px;
+    margin: 0 auto;
+    color: #333;
+  }
+  #admin .admin-login input {
+    width: 100%;
+    padding: 8px 10px;
+    margin: 8px 0 16px;
+    border: 1.5px solid #999;
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  #admin .admin-login input:focus {
+    border-color: #222;
+    outline: none;
+  }
+  #admin .admin-login button {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px solid #222;
+    border-radius: 8px;
+    background: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  #admin .admin-login button:hover {
+    background: #222;
+    color: #fff;
+  }
+  #admin .error-msg {
+    color: red;
+    font-weight: 700;
+    margin-top: -8px;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+  }
+  #admin .admin-panel {
+    font-weight: 600;
+    margin-top: 12px;
+  }
+  #admin .logout-btn {
+    margin-top: 18px;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1.5px solid #222;
+    background: white;
+    font-weight: 700;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  #admin .logout-btn:hover {
+    background: #222;
+    color: white;
+  }
+  /* Admin link upload form style */
+  #admin-upload-form {
+    margin-top: 24px;
+  }
+  #admin-upload-form input[type="url"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #999;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  #admin-upload-form input[type="url"]:focus {
+    border-color: #222;
+    outline: none;
+  }
+  #admin-upload-form button {
+    width: 100%;
+    padding: 10px;
+    border: 1.5px solid #222;
+    border-radius: 8px;
+    background: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease;
+  }
+  #admin-upload-form button:hover {
+    background: #222;
+    color: #fff;
+  }
+  #admin-upload-message {
+    margin-top: 10px;
+    font-weight: 600;
+    color: green;
+  }
 </style>
 </head>
 <body>
@@ -264,28 +457,49 @@
   <span style="margin-left: 12px;">padhAI</span>
 </header>
 
-<main role="main">
+<main role="main" tabindex="-1">
   <section id="home" class="page active" aria-label="Home - Study Materials">
     <h2>Study Materials</h2>
-    <ul class="material-list" id="material-list" tabindex="0" aria-live="polite" aria-relevant="additions removals">
-      <!-- Materials populated by JS -->
-    </ul>
+    <ul class="material-list" id="material-list" tabindex="0" aria-live="polite" aria-relevant="additions removals"></ul>
   </section>
 
   <section id="downloads" class="page" aria-label="Downloads">
     <h2>Downloads</h2>
-    <ul class="material-list" id="downloaded-list" tabindex="0" aria-live="polite" aria-relevant="additions removals">
-      <!-- Downloaded materials list -->
-    </ul>
+    <ul class="material-list" id="downloaded-list" tabindex="0" aria-live="polite" aria-relevant="additions removals"></ul>
     <p id="no-downloads-msg" style="color:#555; font-size: 0.9rem; display:none;">No downloads yet.</p>
   </section>
 
   <section id="profile" class="page" aria-label="Profile">
     <h2>Your Profile</h2>
-    <div style="color:#555; font-size:0.9rem;">
+    <div class="profile-info">
       <p><strong>Name:</strong> Guest User</p>
       <p><strong>Member since:</strong> 2024</p>
       <p><em>Profile features coming soon.</em></p>
+    </div>
+  </section>
+
+  <section id="admin" class="page" aria-label="Admin Area">
+    <h2>Admin Area</h2>
+    <div id="admin-area">
+      <form id="admin-login-form" class="admin-login" aria-live="polite" novalidate>
+        <label for="admin-username">Username</label><br />
+        <input type="text" id="admin-username" name="admin-username" autocomplete="username" required />
+        <br />
+        <label for="admin-password">Password</label><br />
+        <input type="password" id="admin-password" name="admin-password" autocomplete="current-password" required />
+        <div class="error-msg" id="login-error" role="alert" aria-live="assertive" style="display:none;"></div>
+        <button type="submit">Log In</button>
+      </form>
+      <div class="admin-panel" style="display:none;">
+        <p>Welcome, Admin! You have access to admin-only features.</p>
+        <form id="admin-upload-form" aria-label="Upload Study Material Link">
+          <label for="material-link">Add Study Material Link</label><br />
+          <input type="url" id="material-link" name="material-link" placeholder="https://example.com/material.pdf" required />
+          <button type="submit">Add Material</button>
+          <p id="admin-upload-message" aria-live="polite"></p>
+        </form>
+        <button id="logout-btn" class="logout-btn">Log Out</button>
+      </div>
     </div>
   </section>
 </main>
@@ -310,11 +524,58 @@
     </svg>
     Profile
   </button>
+  <button id="nav-admin" aria-label="Admin" tabindex="-1">
+    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" role="img">
+      <path d="M12 2a7 7 0 1 0 7 7h-7z" />
+      <circle cx="12" cy="17" r="4" />
+    </svg>
+    Admin
+  </button>
 </nav>
+
+<div class="expandable-btn-container" aria-label="Content type selection">
+  <button id="expandable-main-btn" aria-expanded="false" aria-haspopup="true" aria-controls="expandable-buttons" aria-label="Expand content types" type="button" title="Choose content type">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" role="img" >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  </button>
+  <div id="expandable-buttons" role="menu" aria-hidden="true" tabindex="-1" >
+    <button class="content-type-btn" role="menuitem" aria-label="Video Content" tabindex="-1" title="Video Content">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <polygon points="10 8 16 12 10 16" />
+      </svg>
+      <span class="tooltip">Video</span>
+    </button>
+    <button class="content-type-btn" role="menuitem" aria-label="Document Content" tabindex="-1" title="Document Content">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="6" y="4" width="12" height="16" rx="2" ry="2"/>
+        <line x1="9" y1="8" x2="15" y2="8" />
+        <line x1="9" y1="12" x2="15" y2="12" />
+        <line x1="9" y1="16" x2="13" y2="16" />
+      </svg>
+      <span class="tooltip">Document</span>
+    </button>
+    <button class="content-type-btn" role="menuitem" aria-label="Quiz Content" tabindex="-1" title="Quiz Content">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 8v4" />
+        <circle cx="12" cy="16" r="1" />
+      </svg>
+      <span class="tooltip">Quiz</span>
+    </button>
+    <button class="content-type-btn" role="menuitem" aria-label="Audio Content" tabindex="-1" title="Audio Content">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <polygon points="5 9 9 9 13 5 13 19 9 15 5 15" />
+        <path d="M16 8a4 4 0 0 1 0 8" />
+      </svg>
+      <span class="tooltip">Audio</span>
+    </button>
+  </div>
+</div>
 
 <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
 
-<!-- Modal for location prompt -->
 <div id="modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal">
     <h3 id="modal-title">Save Download</h3>
@@ -359,10 +620,7 @@
     }
   ];
 
-  // State for downloads, each item includes:
-  // id, title, description, fileUrl, fileName, progress (0-100), status ('downloading'|'pending'|'completed'|'failed')
   let downloadedMaterials = [];
-
   const materialListElem = document.getElementById('material-list');
   const downloadedListElem = document.getElementById('downloaded-list');
   const noDownloadsMsgElem = document.getElementById('no-downloads-msg');
@@ -374,10 +632,13 @@
   const modalCancelBtn = document.getElementById('modal-cancel-btn');
   const modalPromptText = document.getElementById('modal-prompt-text');
 
-  // To track current download triggering save modal
-  let currentDownloadForSave = null;
+  const expandableMainBtn = document.getElementById('expandable-main-btn');
+  const expandableButtonsContainer = document.getElementById('expandable-buttons');
+  const contentTypeButtons = expandableButtonsContainer.querySelectorAll('.content-type-btn');
 
-  // Function to create material list item on home page
+  let currentDownloadForSave = null;
+  let adminLoggedIn = false;
+
   function createMaterialItem(material) {
     const li = document.createElement('li');
     li.className = 'material-item';
@@ -401,7 +662,6 @@
     btn.textContent = 'Download';
     btn.setAttribute('aria-label', `Download ${material.title}`);
 
-    // Check if this material is downloading or downloaded, disable button and update text accordingly
     const existingDownload = downloadedMaterials.find(m => m.id === material.id);
     if (existingDownload) {
       if (existingDownload.status === 'downloading') {
@@ -419,22 +679,16 @@
       }
     }
 
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', e => {
       e.stopPropagation();
-      if (!btn.disabled) {
-        startDownload(material, btn);
-      }
+      if(!btn.disabled) startDownload(material, btn);
     });
 
     li.appendChild(info);
     li.appendChild(btn);
-
     return li;
   }
-
-  // Function to create downloaded material list item for downloads section
-  // Shows progress bar or open button depending on status
-  function createDownloadedItem(download) {
+function createDownloadedItem(download) {
     const li = document.createElement('li');
     li.className = 'material-item';
 
@@ -454,9 +708,7 @@
 
     li.appendChild(info);
 
-    // Right side control - either progress bar or button
     if(download.status === 'downloading' || download.status === 'pending') {
-      // Progress bar container
       const pbc = document.createElement('div');
       pbc.className = 'progress-bar-container';
       const pb = document.createElement('div');
@@ -464,75 +716,58 @@
       pb.style.width = `${download.progress}%`;
       pbc.appendChild(pb);
       li.appendChild(pbc);
-      // Store ref for updates
       download._progressBarElem = pb;
-    } else if (download.status === 'completed') {
+    } else if(download.status === 'completed') {
       const btn = document.createElement('button');
       btn.className = 'download-btn';
       btn.textContent = 'Open';
       btn.setAttribute('aria-label', `Open ${download.title}`);
-      btn.addEventListener('click', () => {
-        window.open(download.fileUrl, '_blank');
-      });
+      btn.addEventListener('click', () => window.open(download.fileUrl, '_blank'));
       li.appendChild(btn);
       download._openBtnElem = btn;
-    } else if (download.status === 'failed') {
+    } else if(download.status === 'failed') {
       const btn = document.createElement('button');
       btn.className = 'download-btn';
       btn.textContent = 'Retry';
       btn.setAttribute('aria-label', `Retry download ${download.title}`);
-      btn.addEventListener('click', () => {
-        // Retry download after failure
-        startDownload(download, null, true);
-      });
+      btn.addEventListener('click', () => startDownload(download, null, true));
       li.appendChild(btn);
     }
 
     return li;
   }
 
-  // Show a small toast notification
   function showToast(message) {
     toastElem.textContent = message;
     toastElem.classList.add('show');
     clearTimeout(toastElem._timeout);
-    toastElem._timeout = setTimeout(() => {
-      toastElem.classList.remove('show');
-    }, 3000);
+    toastElem._timeout = setTimeout(() => toastElem.classList.remove('show'), 3000);
   }
 
-  // Start download with simulated progress using fetch streams
   async function startDownload(material, btn, isRetry=false) {
-    // Check if already downloading or pending
     let existing = downloadedMaterials.find(m => m.id === material.id);
-    if (existing && !isRetry) {
+    if(existing && !isRetry) {
       showToast(`"${material.title}" is already downloading or downloaded.`);
       return;
     }
-    if (!existing) {
+    if(!existing) {
       existing = {...material, progress: 0, status: 'downloading'};
       downloadedMaterials.push(existing);
     } else {
       existing.progress = 0;
       existing.status = 'downloading';
     }
-
-    if (btn) {
+    if(btn){
       btn.disabled = true;
       btn.textContent = 'Downloading...';
     }
-
     updateDownloadedList();
     updateMaterialList();
-
     try {
-      // Fetch the file as a stream for progress
       const response = await fetch(material.fileUrl);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
+      if(!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const contentLength = response.headers.get('content-length');
-      if (!contentLength) {
-        // No content-length, just download without progress
+      if(!contentLength){
         const blob = await response.blob();
         existing.progress = 100;
         existing.status = 'pending';
@@ -541,34 +776,31 @@
         showSavePrompt(existing, blob, btn);
         return;
       }
-
       const total = parseInt(contentLength, 10);
       let loaded = 0;
       const reader = response.body.getReader();
       const chunks = [];
-
       while(true) {
-        const {done, value} = await reader.read();
-        if (done) break;
+        const {done,value} = await reader.read();
+        if(done) break;
         chunks.push(value);
         loaded += value.length;
-        existing.progress = Math.round((loaded / total) * 100);
+        existing.progress = Math.round((loaded/total)*100);
         updateDownloadedList();
         updateMaterialList();
       }
-      // Combine chunks into blob
       const blob = new Blob(chunks);
       existing.progress = 100;
-      existing.status = 'pending'; // waiting for user to save
+      existing.status = 'pending';
       updateDownloadedList();
       updateMaterialList();
       showSavePrompt(existing, blob, btn);
-    } catch (error) {
+    } catch(error){
       existing.status = 'failed';
       existing.progress = 0;
       updateDownloadedList();
       updateMaterialList();
-      if(btn) {
+      if(btn){
         btn.disabled = false;
         btn.textContent = 'Retry Download';
       }
@@ -576,14 +808,13 @@
     }
   }
 
-  // Prompt user to choose location ("save") - simulated modal
-  function showSavePrompt(downloadItem, blob, originalBtn) {
+  function showSavePrompt(downloadItem, blob, originalBtn){
     currentDownloadForSave = {downloadItem, blob, originalBtn};
     modalPromptText.textContent = `Choose location to save file "${downloadItem.fileName}".`;
     modalOverlay.classList.add('show');
+    modalSaveBtn.focus();
   }
 
-  // Save file by triggering download with blob URL
   function saveFile(blob, filename) {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -598,55 +829,40 @@
     }, 100);
   }
 
-  // Update study materials list on home page (refresh buttons states)
   function updateMaterialList() {
     materialListElem.innerHTML = '';
-    materials.forEach(material => {
-      materialListElem.appendChild(createMaterialItem(material));
-    });
+    materials.forEach(material => materialListElem.appendChild(createMaterialItem(material)));
   }
-
-  // Update downloads list page
   function updateDownloadedList() {
     downloadedListElem.innerHTML = '';
-    if (downloadedMaterials.length === 0) {
+    if(downloadedMaterials.length === 0) {
       noDownloadsMsgElem.style.display = 'block';
       return;
     } else {
       noDownloadsMsgElem.style.display = 'none';
     }
-    downloadedMaterials.forEach((d) => {
-      downloadedListElem.appendChild(createDownloadedItem(d));
-    });
+    downloadedMaterials.forEach(d => downloadedListElem.appendChild(createDownloadedItem(d)));
   }
 
-  // Navigation button click handler
   navButtons.forEach(button => {
     button.addEventListener('click', () => {
-      // Remove active class from all
+      const targetId = button.id.replace('nav-', '');
+      if(targetId === 'admin' && !adminLoggedIn) showAdminLogin();
+      pages.forEach(page => page.classList.toggle('active', page.id === targetId));
       navButtons.forEach(btn => {
         btn.classList.remove('active');
         btn.setAttribute('aria-current', 'false');
         btn.tabIndex = -1;
       });
-      // Add active to clicked
       button.classList.add('active');
       button.setAttribute('aria-current', 'page');
       button.tabIndex = 0;
-
-      // Show corresponding page
-      const targetId = button.id.replace('nav-', '');
-      pages.forEach(page => {
-        page.classList.toggle('active', page.id === targetId);
-      });
-      // Focus main content of shown page for accessibility
       document.getElementById(targetId).focus();
     });
   });
 
-  // Modal button handlers
   modalSaveBtn.addEventListener('click', () => {
-    if (!currentDownloadForSave) return;
+    if(!currentDownloadForSave) return;
     saveFile(currentDownloadForSave.blob, currentDownloadForSave.downloadItem.fileName);
     currentDownloadForSave.downloadItem.status = 'completed';
     currentDownloadForSave.downloadItem.progress = 100;
@@ -656,8 +872,7 @@
     closeModal();
   });
   modalCancelBtn.addEventListener('click', () => {
-    if (!currentDownloadForSave) return;
-    // Mark status back to failed or allow retry
+    if(!currentDownloadForSave) return;
     currentDownloadForSave.downloadItem.status = 'failed';
     currentDownloadForSave.downloadItem.progress = 0;
     updateDownloadedList();
@@ -665,20 +880,169 @@
     showToast(`Save canceled for "${currentDownloadForSave.downloadItem.fileName}".`);
     closeModal();
   });
-
   function closeModal() {
     modalOverlay.classList.remove('show');
     currentDownloadForSave = null;
   }
+  let expanded = false;
+  expandableMainBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    expanded = !expanded;
+    expandableMainBtn.setAttribute('aria-expanded', expanded.toString());
+    if(expanded){
+      expandableButtonsContainer.classList.add('expanded');
+      expandableButtonsContainer.setAttribute('aria-hidden', 'false');
+      contentTypeButtons.forEach((btn,i)=>btn.tabIndex = i === 0 ? 0 : -1);
+      contentTypeButtons[0].focus();
+    } else {
+      expandableButtonsContainer.classList.remove('expanded');
+      expandableButtonsContainer.setAttribute('aria-hidden', 'true');
+      contentTypeButtons.forEach(btn => btn.tabIndex = -1);
+    }
+  });
+  document.addEventListener('click', e => {
+    if(expanded && !expandableMainBtn.contains(e.target) && !expandableButtonsContainer.contains(e.target)){
+      expanded = false;
+      expandableMainBtn.setAttribute('aria-expanded', 'false');
+      expandableButtonsContainer.classList.remove('expanded');
+      expandableButtonsContainer.setAttribute('aria-hidden', 'true');
+      contentTypeButtons.forEach(btn => btn.tabIndex = -1);
+    }
+  });
+  contentTypeButtons.forEach((btn, idx) => {
+    btn.addEventListener('keydown', e => {
+      if(e.key === 'ArrowDown'){
+        e.preventDefault();
+        const next = (idx + 1) % contentTypeButtons.length;
+        contentTypeButtons[next].focus();
+      } else if(e.key === 'ArrowUp'){
+        e.preventDefault();
+        const prev = (idx - 1 + contentTypeButtons.length) % contentTypeButtons.length;
+        contentTypeButtons[prev].focus();
+      } else if(e.key === 'Escape'){
+        e.preventDefault();
+        expanded = false;
+        expandableMainBtn.setAttribute('aria-expanded', 'false');
+        expandableButtonsContainer.classList.remove('expanded');
+        expandableButtonsContainer.setAttribute('aria-hidden', 'true');
+        contentTypeButtons.forEach(btn => btn.tabIndex = -1);
+        expandableMainBtn.focus();
+      }
+    });
+  });
+  contentTypeButtons[0].addEventListener('click', () => alert('Video selected (feature coming soon)'));
+  contentTypeButtons[1].addEventListener('click', () => alert('Document selected (feature coming soon)'));
+  contentTypeButtons[2].addEventListener('click', () => alert('Quiz selected (feature coming soon)'));
+  contentTypeButtons[3].addEventListener('click', () => alert('Audio selected (feature coming soon)'));
 
-  // Initial load
-  function init() {
-    updateMaterialList();
-    updateDownloadedList();
+  // Admin login form control
+  const adminLoginForm = document.getElementById('admin-login-form');
+  const loginErrorElem = document.getElementById('login-error');
+  const adminPanel = document.querySelector('#admin .admin-panel');
+  const logoutBtn = document.getElementById('logout-btn');
+  const adminUsernameInput = document.getElementById('admin-username');
+  const adminPasswordInput = document.getElementById('admin-password');
+  const adminUploadForm = document.getElementById('admin-upload-form');
+  const adminUploadMessage = document.getElementById('admin-upload-message');
+
+  // Obfuscated credentials check
+  function checkCredentials(username, password) {
+    // Simple obfuscation for demo (do NOT consider truly secure)
+    const uEncoded = "TXJ1dHVuamF5YQ=="; // Base64 for "Mrutunjaya"
+    const pEncoded = "U2FudUAyMDAx";     // Base64 for "Sanu@2001"
+    const decoder = atob;
+    return (username === decoder(uEncoded) && password === decoder(pEncoded));
   }
 
+  adminLoginForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const username = adminUsernameInput.value.trim();
+    const password = adminPasswordInput.value.trim();
+    if(checkCredentials(username, password)){
+      loginSuccess();
+    } else {
+      loginError('Invalid username or password.');
+    }
+  });
+
+  function loginSuccess(){
+    adminLoggedIn = true;
+    loginErrorElem.style.display = 'none';
+    adminLoginForm.style.display = 'none';
+    adminPanel.style.display = 'block';
+    adminUploadMessage.textContent = '';
+    showToast('Logged in as admin.');
+  }
+
+  function loginError(message){
+    loginErrorElem.textContent = message;
+    loginErrorElem.style.display = 'block';
+  }
+
+  function logoutAdmin(){
+    adminLoggedIn = false;
+    adminLoginForm.reset();
+    adminLoginForm.style.display = 'block';
+    adminPanel.style.display = 'none';
+    adminUploadMessage.textContent = '';
+    const adminNavBtn = document.getElementById('nav-admin');
+    const currentPage = document.querySelector('section.page.active');
+    if(currentPage && currentPage.id === 'admin'){
+      adminNavBtn.classList.remove('active');
+      adminNavBtn.setAttribute('aria-current','false');
+      adminNavBtn.tabIndex = -1;
+      document.getElementById('nav-home').classList.add('active');
+      document.getElementById('nav-home').setAttribute('aria-current','page');
+      document.getElementById('nav-home').tabIndex = 0;
+      pages.forEach(page => page.classList.toggle('active', page.id === 'home'));
+    }
+    showToast('Admin logged out.');
+  }
+  logoutBtn.addEventListener('click', logoutAdmin);
+
+  adminUploadForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const url = adminUploadForm['material-link'].value.trim();
+    if(!url) {
+      adminUploadMessage.style.color = 'red';
+      adminUploadMessage.textContent = 'Please enter a valid link.';
+      return;
+    }
+    try {
+      new URL(url);
+    } catch {
+      adminUploadMessage.style.color = 'red';
+      adminUploadMessage.textContent = 'Invalid URL format.';
+      return;
+    }
+    // Add new material with default title & description
+    const newId = 'm' + (materials.length + 1);
+    const newMaterial = {
+      id: newId,
+      title: 'New Material ' + (materials.length + 1),
+      description: 'Uploaded via Admin',
+      fileName: url.split('/').pop() || 'new-material.pdf',
+      fileUrl: url
+    };
+    materials.push(newMaterial);
+    updateMaterialList();
+    adminUploadMessage.style.color = 'green';
+    adminUploadMessage.textContent = 'Material added successfully!';
+    adminUploadForm.reset();
+  });
+
+  function showAdminLogin(){
+    adminLoginForm.style.display = 'block';
+    adminPanel.style.display = 'none';
+    loginErrorElem.style.display = 'none';
+  }
+
+  function init(){
+    updateMaterialList();
+    updateDownloadedList();
+    showAdminLogin();
+  }
   init();
 </script>
 </body>
 </html>
-
