@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Softonic-like Software Download Site</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+    }
+    header {
+      width: 100%;
+      max-width: 900px;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-weight: 700;
+      color: #3f51b5;
+    }
+    main {
+      width: 100%;
+      max-width: 900px;
+      flex: 1 1 auto;
+    }
+    .software-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(220px,1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: box-shadow 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .card:hover {
+      box-shadow: 0 6px 14px rgba(63,81,181,0.3);
+    }
+    .thumbnail {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+    }
+    .software-name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-bottom: 0.25rem;
+      color: #3f51b5;
+    }
+    .software-version {
+      font-size: 0.85rem;
+      color: #777;
+      margin-bottom: 0.5rem;
+    }
+    .software-description {
+      flex-grow: 1;
+      font-size: 0.95rem;
+      color: #555;
+      margin-bottom: 1rem;
+    }
+    .btn-download {
+      display: inline-block;
+      background-color: #3f51b5;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: background-color 0.3s ease;
+    }
+    .btn-download:hover {
+      background-color: #303f9f;
+    }
+    .back-button {
+      margin-bottom: 1rem;
+      background: none;
+      border: none;
+      color: #3f51b5;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .back-button:hover {
+      text-decoration: underline;
+    }
+    .loading {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #666;
+      padding: 2rem 0;
+    }
+    footer {
+      width: 100%;
+      max-width: 900px;
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 0.85rem;
+      color: #999;
+      user-select: none;
+    }
+    footer a {
+      color: #3f51b5;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Softonic-like Software Download Site</h1>
+  </header>
+  <main id="root"></main>
+  <footer>
+    &copy; 2024 YourSite &nbsp;|&nbsp; Powered by React &amp; Node.js backend
+  </footer>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [softwareList, setSoftwareList] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState('');
+      const [selectedSoftware, setSelectedSoftware] = useState(null);
+
+      // Backend API URL: adjust if needed
+      const API_BASE = '';
+
+      useEffect(() => {
+        setLoading(true);
+        setError('');
+        fetch(API_BASE + '/api/software')
+          .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch software list');
+            return res.json();
+          })
+          .then(data => {
+            setSoftwareList(data);
+            setLoading(false);
+          })
+          .catch(err => {
+            setError(err.message || 'Failed to load data');
+            setLoading(false);
+          });
+      }, []);
+
+      const fetchDetails = (id) => {
+        setLoading(true);
+        setError('');
+        fetch(API_BASE + '/api/software/' + id)
+          .then(res => {
+            if (!res.ok) throw new Error('Failed to fetch software details');
+            return res.json();
+          })
+          .then(data => {
+            setSelectedSoftware(data);
+            setLoading(false);
+          })
+          .catch(err => {
+            setError(err.message || 'Failed to load details');
+            setLoading(false);
+          });
+      };
+
+      const onSelectSoftware = (id) => {
+        fetchDetails(id);
+      };
+
+      const onBack = () => {
+        setSelectedSoftware(null);
+        setError('');
+      };
+
+      if (loading) {
+        return React.createElement('div', {className:'loading'}, 'Loading...');
+      }
+
+      if (error) {
+        return React.createElement('div', {className:'loading', style:{color: 'red'}}, error);
+      }
+
+      if (selectedSoftware) {
+        return React.createElement('div', {},
+          React.createElement('button', {className: 'back-button', onClick: onBack}, '← Back to list'),
+          React.createElement('div', {className: 'card', style: {cursor: 'default'}},
+            React.createElement('img', {
+              className: 'thumbnail',
+              src: selectedSoftware.thumbnail,
+              alt: selectedSoftware.name
+            }),
+            React.createElement('h2', {className: 'software-name'}, selectedSoftware.name),
+            React.createElement('div', {className: 'software-version'}, 'Version: ' + selectedSoftware.version),
+            React.createElement('p', {className: 'software-description'}, selectedSoftware.description),
+            React.createElement('a', {
+              className: 'btn-download',
+              href: selectedSoftware.downloadLink,
+              target: '_blank',
+              rel: 'noopener noreferrer'
+            }, 'Download Now')
+          )
+        );
+      }
+
+      return React.createElement('div', {className: 'software-list'},
+        softwareList.map(soft => 
+          React.createElement('div', {
+            key: soft.id,
+            className: 'card',
+            onClick: () => onSelectSoftware(soft.id),
+            role: "button",
+            tabIndex: 0,
+            onKeyDown: e => { if (e.key === 'Enter') onSelectSoftware(soft.id); }
+          },
+            React.createElement('img', {
+              className: 'thumbnail',
+              src: soft.thumbnail,
+              alt: soft.name
+            }),
+            React.createElement('div', {className: 'software-name'}, soft.name),
+            React.createElement('div', {className: 'software-version'}, 'Version: ' + soft.version),
+            React.createElement('p', {className: 'software-description'}, soft.description.length > 80 ? soft.description.slice(0, 80) + '…' : soft.description)
+          )
+        )
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+  </script>
+</body>
+</html>
